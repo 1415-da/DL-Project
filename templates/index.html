@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Chicken Disease Classification</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+	<style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --background-color: #1a1a2e;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --text-color: #ffffff;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --card-gradient: linear-gradient(135deg, rgba(41, 128, 185, 0.95) 0%, rgba(44, 62, 80, 0.95) 100%);
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 2rem 0;
+            position: relative;
+            overflow-x: hidden;
+            font-size: 16px;
+        }
+
+        body::before {
+            content: '';
+			position: fixed;
+            top: 0;
+            left: 0;
+			width: 100%;
+			height: 100%;
+            background: url('data:image/svg+xml,<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1" fill="rgba(255,255,255,0.1)"/></svg>');
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 2rem;
+            overflow: hidden;
+            color: white;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            background: rgba(0, 0, 0, 0.2);
+            color: white;
+            padding: 1.8rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-header h3 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .card-body {
+            padding: 2.5rem;
+            font-size: 1.2rem;
+            line-height: 1.6;
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            color: white;
+        }
+
+        .upload-area:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: white;
+        }
+
+        .upload-icon {
+            font-size: 3.5rem;
+            color: white;
+            margin-bottom: 1rem;
+        }
+
+        .upload-area h4 {
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn-primary {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: white;
+            color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .prediction-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .confidence-bar {
+            background: rgba(255, 255, 255, 0.2);
+            height: 12px;
+            border-radius: 6px;
+			overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .confidence-level {
+            background: white;
+            height: 100%;
+            width: 0;
+            transition: width 1s ease-in-out;
+        }
+
+        .healthy-message {
+            color: var(--success-color);
+            font-size: 1.5rem;
+            padding: 2rem;
+            border-radius: 12px;
+            background: rgba(39, 174, 96, 0.1);
+            border: 1px solid rgba(39, 174, 96, 0.3);
+            line-height: 1.6;
+        }
+
+        .disease-info {
+            background: rgba(231, 76, 60, 0.1);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-top: 1.5rem;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            font-size: 1.3rem;
+            line-height: 1.8;
+        }
+
+        .disease-info h4 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: #ffffff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .disease-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .detail-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .detail-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .detail-card h5 {
+            color: #3498db;
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .severity-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .severity-high {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+        }
+
+        .severity-medium {
+            background: rgba(243, 156, 18, 0.2);
+            color: #f39c12;
+        }
+
+        .severity-low {
+            background: rgba(39, 174, 96, 0.2);
+            color: #27ae60;
+        }
+
+        .severity-none {
+            background: rgba(52, 152, 219, 0.2);
+            color: #3498db;
+        }
+
+        .symptom-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .symptom-list li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .symptom-list li:before {
+            content: "•";
+            color: #3498db;
+        }
+
+        .prevention-tips {
+            background: rgba(39, 174, 96, 0.1);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .prevention-tips h5 {
+            color: #27ae60;
+        }
+
+        .transmission-info {
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .transmission-info h5 {
+            color: #3498db;
+        }
+
+        .incubation-period {
+            background: rgba(155, 89, 182, 0.1);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .incubation-period h5 {
+            color: #9b59b6;
+        }
+
+        .treatment-steps {
+            background: rgba(241, 196, 15, 0.1);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .treatment-steps h5 {
+            color: #f1c40f;
+        }
+
+        .risk-factors {
+            background: rgba(231, 76, 60, 0.1);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .risk-factors h5 {
+            color: #e74c3c;
+        }
+
+        .economic-impact {
+            background: rgba(52, 73, 94, 0.1);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .economic-impact h5 {
+            color: #34495e;
+        }
+
+        .diagnostic-methods {
+            background: rgba(46, 204, 113, 0.1);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .diagnostic-methods h5 {
+            color: #2ecc71;
+        }
+
+        .step-list {
+            list-style: none;
+            padding: 0;
+            counter-reset: step-counter;
+        }
+
+        .step-list li {
+            padding: 0.8rem 0;
+            padding-left: 2.5rem;
+            position: relative;
+            counter-increment: step-counter;
+        }
+
+        .step-list li:before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1.8rem;
+            height: 1.8rem;
+            background: #f1c40f;
+            color: #2c3e50;
+			border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .remedies-section {
+            position: relative;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-top: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            z-index: 2;
+            width: 100%;
+        }
+
+        .remedies-section .card-header {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .remedies-section .card-header h3 {
+            font-size: 2rem;
+            margin: 0;
+            color: white;
+        }
+
+        .remedies-section .card-body {
+            padding: 2rem;
+        }
+
+        .remedies-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .remedies-list li {
+            padding: 1rem 1.5rem;
+            margin: 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+            line-height: 1.6;
+            position: relative;
+            padding-left: 2.5rem;
+        }
+
+        .remedies-list li:before {
+            content: "•";
+            color: #3498db;
+            font-size: 1.5rem;
+            position: absolute;
+            left: 1rem;
+            top: 0.7rem;
+        }
+
+        .remedies-list li:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .prediction-result h5 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: #ffffff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .confidence-container p {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: #ffffff;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            border: 3px solid white;
+        }
+
+        .preview-image:hover {
+            transform: scale(1.02);
+        }
+
+        .loading-spinner {
+			width: 60px;
+			height: 60px;
+            border: 6px solid rgba(255, 255, 255, 0.3);
+            border-top: 6px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+		@keyframes spin {
+			0% { transform: rotate(0deg); }
+			100% { transform: rotate(360deg); }
+		}
+
+        .alert {
+            border-radius: 10px;
+            padding: 1.2rem;
+            margin: 1rem 0;
+            font-size: 1.2rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header-title {
+            color: #ffffff;
+            font-size: 3.2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            background: linear-gradient(to right, #ffffff, #a8e6cf);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-subtitle {
+            color: #ffffff;
+            font-size: 1.4rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        #imagePreview {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-top: 1.5rem;
+        }
+	</style>
+</head>
+<body>
+    <div class="main-container">
+        <h1 class="header-title animate__animated animate__fadeIn">Chicken Disease Detection</h1>
+        <p class="header-subtitle animate__animated animate__fadeIn">Upload an image to detect potential diseases in chickens</p>
+
+			<div class="row">
+            <div class="col-md-6">
+                <div class="card animate__animated animate__fadeInLeft">
+                    <div class="card-header">
+                        <h3 class="mb-0"><i class="fas fa-upload me-2"></i>Upload Image</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="upload-area" id="drop-zone">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <h4>Drag & Drop Image Here</h4>
+                            <p>or</p>
+                            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                            <button class="btn btn-primary" onclick="document.getElementById('imageInput').click()">
+                                <i class="fas fa-folder-open me-2"></i>Browse Files
+                            </button>
+                        </div>
+                        <div id="imagePreview" class="mt-4 text-center" style="display: none;">
+                            <img id="preview" class="preview-image" src="" alt="Preview">
+                            <div class="mt-3">
+                                <button class="btn btn-primary" onclick="predict()">
+                                    <i class="fas fa-search me-2"></i>Analyze Image
+                                </button>
+                            </div>
+					</div>
+							</div>
+					</div>
+				</div>
+
+            <div class="col-md-6">
+                <div class="card animate__animated animate__fadeInRight">
+                    <div class="card-header">
+                        <h3 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Analysis Results</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="prediction-result"></div>
+                        <div id="confidence-container"></div>
+                        <div id="disease-description" class="disease-info" style="display: none;"></div>
+					</div>
+				</div>
+			</div>
+	</div>
+
+        <!-- Disease Factors Grid -->
+        <div id="disease-factors-grid" class="row" style="display: none; margin-top: 2rem;"></div>
+
+        <!-- Remedies Section -->
+        <div id="remedies-section" class="card mt-4 animate__animated animate__fadeInUp" style="display: none;">
+            <div class="card-header">
+                <h3 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Recommended Remedies</h3>
+            </div>
+            <div class="card-body">
+                <div id="remedies-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+$(document).ready(function(){
+    var base_data = "";
+            var diseaseDescriptions = {
+                "Normal": "No signs of disease detected. The chicken appears to be healthy.",
+                "Coccidiosis": {
+                    description: "Coccidiosis is a parasitic disease that affects the intestinal tract of chickens. It is caused by protozoa of the genus Eimeria. The disease can cause significant economic losses in poultry production due to reduced growth rates, increased mortality, and treatment costs.",
+                    severity: "high",
+                    symptoms: [
+                        "Diarrhea (often bloody)",
+                        "Weight loss",
+                        "Decreased feed intake",
+                        "Dehydration",
+                        "Ruffled feathers",
+                        "Depression",
+                        "Huddling behavior",
+                        "Reduced growth rate",
+                        "Increased mortality in severe cases"
+                    ],
+                    transmission: [
+                        "Direct contact with infected birds",
+                        "Contaminated feed and water",
+                        "Contaminated equipment and bedding",
+                        "Wild birds and rodents",
+                        "Insects and other vectors"
+                    ],
+                    incubation: "4-7 days",
+                    prevention: [
+                        "Maintain strict biosecurity measures",
+                        "Regular cleaning and disinfection of facilities",
+                        "Proper waste management",
+                        "Control of wild birds and rodents",
+                        "Vaccination programs",
+                        "Regular health monitoring",
+                        "Quarantine new birds"
+                    ],
+                    treatment: [
+                        "Administer anticoccidial medications as prescribed",
+                        "Provide supportive care and hydration",
+                        "Isolate affected birds",
+                        "Clean and disinfect the environment",
+                        "Monitor response to treatment",
+                        "Adjust feed and water management",
+                        "Implement preventive measures"
+                    ]
+                },
+                "Healthy": "No signs of disease detected. The chicken appears to be healthy."
+            };
+
+            var remedies = {
+                "Normal": [],
+                "Healthy": [],
+                "Coccidiosis": [
+                    "Administer anticoccidial medications as prescribed by a veterinarian",
+                    "Maintain clean and dry bedding in the coop",
+                    "Implement proper biosecurity measures",
+                    "Provide clean, fresh water at all times",
+                    "Consider using natural supplements like oregano oil or garlic",
+                    "Isolate infected birds from the healthy flock",
+                    "Regularly clean and disinfect the coop",
+                    "Ensure proper ventilation in the housing area",
+                    "Monitor feed quality and storage conditions",
+                    "Implement a vaccination program if recommended by a veterinarian"
+                ]
+            };
+
+    $('#uload').click(function(){
+        $('#fileinput').click();
+    });
+
+    $('#fileinput').change(function(e){
+        var file = e.target.files[0];
+        var reader = new FileReader();
+        
+        reader.onload = function(event){
+            base_data = event.target.result;
+            $('#photo').attr('src', base_data);
+            $('#photo').show();
+            $('#video').hide();
+        };
+        
+        reader.readAsDataURL(file);
+    });
+
+    $('#send').click(function(){
+        if(base_data === "") {
+            alert("Please upload an image first!");
+            return;
+        }
+        sendRequest(base_data);
+    });
+
+    function sendRequest(base64Data){
+        var url = $("#url").val();
+        $("#loading").show();
+        
+        if (!base64Data.startsWith('data:image')) {
+            base64Data = 'data:image/jpeg;base64,' + base64Data;
+        }
+        
+        $.ajax({
+            url: url,
+            type: "post",
+            cache: false,
+            async: true,
+            crossDomain: true,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            data: JSON.stringify({image: base64Data}),
+            success: function(res){
+                        if(res[0].error) {
+                            showError(res[0].error);
+                        } else {
+                            showResults(res[0]);
+                        }
+                        $("#loading").hide();
+                    },
+                    error: function(xhr, status, error) {
+                        showError(error);
+                        $("#loading").hide();
+                    }
+                });
+            }
+
+            function showResults(result) {
+                const predictionResult = $('#prediction-result');
+                const confidenceContainer = $('#confidence-container');
+                const diseaseDescription = $('#disease-description');
+                const factorsGrid = $('#disease-factors-grid');
+                const remediesSection = $('#remedies-section');
+                const remediesContent = $('#remedies-content');
+                
+                // Clear previous results
+                predictionResult.empty();
+                confidenceContainer.empty();
+                diseaseDescription.empty();
+                factorsGrid.empty();
+                remediesContent.empty();
+                
+                // Normalize the class name to handle both "Normal" and "Healthy"
+                const normalizedClass = result.class === "Healthy" ? "Normal" : result.class;
+                
+                if (normalizedClass === "Normal") {
+                    // Show only healthy message for normal cases
+                    predictionResult.html(`
+                        <div class="healthy-message animate__animated animate__fadeIn">
+                            <i class="fas fa-check-circle"></i> No signs of disease detected. The chicken appears to be healthy.
+                        </div>
+                    `);
+                    diseaseDescription.hide();
+                    factorsGrid.hide();
+                    remediesSection.hide();
+                } else {
+                    // Show full information for disease cases
+                    predictionResult.html(`<h5 class="animate__animated animate__fadeIn">Detected Condition: <span class="text-primary">${result.class}</span></h5>`);
+                    
+                    const confidence = (result.confidence * 100).toFixed(2);
+                    confidenceContainer.html(`
+                        <div class="animate__animated animate__fadeIn">
+                            <p>Confidence: ${confidence}%</p>
+                            <div class="confidence-bar">
+                                <div class="confidence-level" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    `);
+                    
+                    setTimeout(() => {
+                        $('.confidence-level').css('width', confidence + '%');
+                    }, 100);
+                    
+                    const diseaseInfo = result.disease_info;
+                    if (diseaseInfo) {
+                        diseaseDescription.html(`
+                            <div class="animate__animated animate__fadeIn">
+                                <h4>Disease Information</h4>
+                                <p>${diseaseInfo.description}</p>
+                                <div class="severity-indicator severity-${diseaseInfo.severity}">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    Severity Level: ${diseaseInfo.severity.toUpperCase()}
+                                </div>
+                            </div>
+                        `);
+                        diseaseDescription.show();
+
+                        // Disease factors as cards
+                        let cards = [];
+                        if (diseaseInfo.symptoms && diseaseInfo.symptoms.length > 0) {
+                            cards.push(`
+                                <div class="col-md-4 mb-4">
+                                    <div class="card detail-card">
+                                        <div class="card-header"><h5><i class="fas fa-virus"></i> Symptoms</h5></div>
+                                        <div class="card-body"><ul class="symptom-list">${diseaseInfo.symptoms.map(s => `<li>${s}</li>`).join('')}</ul></div>
+                                    </div>
+                                </div>
+                            `);
+                        }
+                        if (diseaseInfo.transmission && diseaseInfo.transmission.length > 0) {
+                            cards.push(`
+                                <div class="col-md-4 mb-4">
+                                    <div class="card detail-card">
+                                        <div class="card-header"><h5><i class="fas fa-exchange-alt"></i> Transmission</h5></div>
+                                        <div class="card-body"><ul class="symptom-list">${diseaseInfo.transmission.map(s => `<li>${s}</li>`).join('')}</ul></div>
+                                    </div>
+                                </div>
+                            `);
+                        }
+                        if (diseaseInfo.risk_factors && diseaseInfo.risk_factors.length > 0) {
+                            cards.push(`
+                                <div class="col-md-4 mb-4">
+                                    <div class="card detail-card">
+                                        <div class="card-header"><h5><i class="fas fa-exclamation-circle"></i> Risk Factors</h5></div>
+                                        <div class="card-body"><ul class="symptom-list">${diseaseInfo.risk_factors.map(s => `<li>${s}</li>`).join('')}</ul></div>
+                                    </div>
+                                </div>
+                            `);
+                        }
+                        if (diseaseInfo.economic_impact && diseaseInfo.economic_impact.length > 0) {
+                            cards.push(`
+                                <div class="col-md-4 mb-4">
+                                    <div class="card detail-card">
+                                        <div class="card-header"><h5><i class="fas fa-chart-line"></i> Economic Impact</h5></div>
+                                        <div class="card-body"><ul class="symptom-list">${diseaseInfo.economic_impact.map(s => `<li>${s}</li>`).join('')}</ul></div>
+                                    </div>
+                                </div>
+                            `);
+                        }
+                        if (diseaseInfo.incubation && diseaseInfo.incubation !== 'N/A') {
+                            cards.push(`
+                                <div class="col-md-4 mb-4">
+                                    <div class="card detail-card">
+                                        <div class="card-header"><h5><i class="fas fa-clock"></i> Incubation Period</h5></div>
+                                        <div class="card-body"><p>${diseaseInfo.incubation}</p></div>
+                                    </div>
+                                </div>
+                            `);
+                        }
+                        if (diseaseInfo.diagnostic_methods && diseaseInfo.diagnostic_methods.length > 0) {
+                            cards.push(`
+                                <div class="col-md-4 mb-4">
+                                    <div class="card detail-card">
+                                        <div class="card-header"><h5><i class="fas fa-microscope"></i> Diagnostic Methods</h5></div>
+                                        <div class="card-body"><ul class="symptom-list">${diseaseInfo.diagnostic_methods.map(s => `<li>${s}</li>`).join('')}</ul></div>
+                                    </div>
+                                </div>
+                            `);
+                        }
+                        factorsGrid.html(cards.join(''));
+                        factorsGrid.show();
+
+                        // Display remedies in a separate section
+                        if (diseaseInfo.treatment && diseaseInfo.treatment.length > 0) {
+                            remediesContent.html(`
+                                <div class="remedies-list">
+                                    ${diseaseInfo.treatment.map(remedy => `
+                                        <div class="remedy-item">
+                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                            <span>${remedy}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `);
+                            remediesSection.show();
+                        } else {
+                            remediesSection.hide();
+                        }
+                    }
+                }
+            }
+
+            function showError(error) {
+                const predictionResult = $('#prediction-result');
+                predictionResult.html(`
+                    <div class="alert alert-danger animate__animated animate__fadeIn">
+                        Error: ${error}
+                    </div>
+                `);
+            }
+
+            // Handle file input change
+            $('#imageInput').change(function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#preview').attr('src', e.target.result);
+                        $('#imagePreview').show();
+                        $('#drop-zone').hide(); // Hide the upload area after image is selected
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Handle drag and drop
+            const dropZone = document.getElementById('drop-zone');
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight(e) {
+                dropZone.classList.add('highlight');
+            }
+
+            function unhighlight(e) {
+                dropZone.classList.remove('highlight');
+            }
+
+            dropZone.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const file = dt.files[0];
+                
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#preview').attr('src', e.target.result);
+                        $('#imagePreview').show();
+                        $('#drop-zone').hide(); // Hide the upload area after image is dropped
+                    }
+                    reader.readAsDataURL(file);
+                }
+            }
+
+            // Add a reset button to the preview
+            $('#imagePreview').append(`
+                <button class="btn btn-primary mt-3" onclick="resetUpload()">
+                    <i class="fas fa-redo me-2"></i>Upload New Image
+                </button>
+            `);
+
+            // Reset function
+            window.resetUpload = function() {
+                $('#preview').attr('src', '');
+                $('#imagePreview').hide();
+                $('#drop-zone').show();
+                $('#prediction-result').empty();
+                $('#confidence-container').empty();
+                $('#disease-description').hide().empty();
+                $('#disease-factors-grid').hide().empty();
+                $('#remedies-section').hide().empty();
+            }
+
+            // Prediction function
+            window.predict = function() {
+                const imageData = $('#preview').attr('src');
+                if (!imageData) {
+                    alert('Please select an image first');
+                    return;
+                }
+
+                // Show loading state
+                $('#prediction-result').html(`
+                    <div class="text-center">
+                        <div class="loading-spinner mx-auto"></div>
+                        <p class="mt-3">Analyzing image...</p>
+                    </div>
+                `);
+
+                // Make prediction request
+                $.ajax({
+                    url: '/predict',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        image: imageData
+                    }),
+                    success: function(response) {
+                        if (response.error) {
+                            showError(response.error);
+                        } else {
+                            showResults(response[0]);
+                        }
+            },
+            error: function(xhr, status, error) {
+                        showError('Error analyzing image: ' + error);
+            }
+        });
+    }
+});
+</script>
+</body>
+</html>
